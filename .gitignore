@@ -1,6 +1,7 @@
 resdir/*
 *.vcf
 *.vcf.gz
+*.gz
 *.bam
 *.bam.bai
 *.fasta
@@ -9,3 +10,6 @@ log_commandes
 tmp/*
 test
 datatest/*
+work/*
+\.nextflow.log*
+.nextflow/*
