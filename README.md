@@ -15,5 +15,5 @@ This script will generate 2 files from your input vcf (staying intact) :
 
 ```
 name_of_your_file_monoallelic_variants_only.vcf (or vcf.gz)
-restest_mutect2_tumoronly-multiallelic-variants-only-decomposed-normalized-rtgready.vcf
+restest_mutect2_tumoronly-multiallelic-variants-only-decomposed-normalized-rtgready.vcf (or vcf.gz)
 ```
