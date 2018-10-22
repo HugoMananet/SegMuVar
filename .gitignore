@@ -8,3 +8,4 @@ data/*
 log_commandes
 tmp/*
 test
+datatest/*
