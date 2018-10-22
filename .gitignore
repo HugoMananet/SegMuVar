@@ -1,0 +1,10 @@
+resdir/*
+*.vcf
+*.vcf.gz
+*.bam
+*.bam.bai
+*.fasta
+data/*
+log_commandes
+tmp/*
+test
