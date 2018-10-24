@@ -13,3 +13,5 @@ datatest/*
 work/*
 \.nextflow.log*
 .nextflow/*
+resdir/*
+segmuvar.nf.old

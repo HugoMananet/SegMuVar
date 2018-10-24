@@ -5,42 +5,6 @@ input = Channel.fromPath(params.vcf)
 	.map { file -> filename=file.toString().substring(file.toString().lastIndexOf('/') + 1, file.toString().length());
 		tuple(filename.substring(0, filename.indexOf('.')),file)}
 
-// input.subscribe { println "$it" }
-
-// input = Channel.fromPath(params.vcf)
-// 	.map { file -> tuple(file.baseName,file)}
-// channeldecompress = Channel.create()
-// VcfChannel = Channel.create()
-// .into {vcf_channel1; vcf_channel2}
-
-// vcf_channel1.subscribe { println "value: $it" }
-// basename_vcf_vcfgz = params.vcf.substring(0, params.vcf.indexOf('.'));
-// filepath.substring(filepath.lastIndexOf('/') + 1, filepath.length())
-// if (params.vcf == 'gz'){
-// 	Channel.fromPath(params.vcf)
-// 		.map { file -> tuple(file.baseName,file.extension,file)}
-// 		.into {vcf_gz_channel1; vcf_gz_channel2}
-//
-//
-// }else if (file.extension == '.vcf'){
-// 	Channel.fromPath(params.vcf)
-// 		.map { file -> tuple(file.baseName,file.extension,file)}
-// 		.into {vcf_channel1; vcf_channel2}
-// 		.println{ext, files -> "Files with the extension $ext are $files"}
-//
-// }
-
-// input.subscribe onNext:{
-// 	basename, ext, fichier ->if(ext.equals('gz')){
-// 		channeldecompress << [basename,fichier]
-// 		}else{
-// 		VcfChannel << [basename, ext, fichier]
-// 	}
-// }
-// onComplete: {channeldecompress.close();VcfChannel.close()}
-// decompressChannel.subscribe{println "$it"}
-
-
 process decompress_vcfgz {
 
 	tag "Generate vcf file from vcf.gz"
