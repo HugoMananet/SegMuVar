@@ -1,40 +1,119 @@
 #!/usr/bin/env nextflow
 
 ref = file(params.ref)
+input = Channel.fromPath(params.vcf)
+	.map { file -> filename=file.toString().substring(file.toString().lastIndexOf('/') + 1, file.toString().length());
+		tuple(filename.substring(0, filename.indexOf('.')),file)}
 
-Channel.fromPath(params.vcf).map { file -> tuple(file.baseName,file)}.into {vcf_channel1; vcf_channel2}
+// input.subscribe { println "$it" }
+
+// input = Channel.fromPath(params.vcf)
+// 	.map { file -> tuple(file.baseName,file)}
+// channeldecompress = Channel.create()
+// VcfChannel = Channel.create()
+// .into {vcf_channel1; vcf_channel2}
+
+// vcf_channel1.subscribe { println "value: $it" }
+// basename_vcf_vcfgz = params.vcf.substring(0, params.vcf.indexOf('.'));
+// filepath.substring(filepath.lastIndexOf('/') + 1, filepath.length())
+// if (params.vcf == 'gz'){
+// 	Channel.fromPath(params.vcf)
+// 		.map { file -> tuple(file.baseName,file.extension,file)}
+// 		.into {vcf_gz_channel1; vcf_gz_channel2}
+//
+//
+// }else if (file.extension == '.vcf'){
+// 	Channel.fromPath(params.vcf)
+// 		.map { file -> tuple(file.baseName,file.extension,file)}
+// 		.into {vcf_channel1; vcf_channel2}
+// 		.println{ext, files -> "Files with the extension $ext are $files"}
+//
+// }
+
+// input.subscribe onNext:{
+// 	basename, ext, fichier ->if(ext.equals('gz')){
+// 		channeldecompress << [basename,fichier]
+// 		}else{
+// 		VcfChannel << [basename, ext, fichier]
+// 	}
+// }
+// onComplete: {channeldecompress.close();VcfChannel.close()}
+// decompressChannel.subscribe{println "$it"}
 
 
+process decompress_vcfgz {
+
+	tag "Generate vcf file from vcf.gz"
+	label 'samtools'
+
+	input:
+		set val(vcf_basename), file(vcf_file) from input
+
+	output:
+		set val("${vcf_basename}_decompressed"), file("${vcf_basename}_decompressed.vcf") into vcf_channel1, vcf_channel2
+
+		"""
+			bcftools view \
+			--threads 2 \
+			--no-update \
+			-o ${vcf_basename}_decompressed.vcf \
+			${vcf_file}
+		"""
+}
 
 process generateMono {
 
-	publishDir ".", mode: 'copy', overwrite: true
+	// publishDir ".", mode: 'copy', overwrite: true
 
-	tag "Generate monoallelic variant for ${vcf_basename}"
+	tag "Generate monoallelic variant for ${vcf_mono_basename}"
 
 	input:
-		set val(vcf_basename),file(vcf_file) from vcf_channel1
+		set val(vcf_mono_basename),file(vcf_mono_file) from vcf_channel1
 
 	output:
-		set val("${vcf_basename}_monoallelic_variants_only"), file("${vcf_basename}_monoallelic_variants_only.vcf") into mono_vcf_channel
+		set val("${vcf_mono_basename}_monoallelic_variants_only"), file("${vcf_mono_basename}_monoallelic_variants_only.vcf") into mono_vcf_channel
 
 	"""
-		grep -v -e "././" ${vcf_file} > ${vcf_basename}_monoallelic_variants_only.vcf
+		grep -v -e "././" ${vcf_mono_file} > ${vcf_mono_basename}_monoallelic_variants_only.vcf
 	"""
 }
 
-process generateMulti {
+process compress_vcf_mono{
 
-	tag "Generate multiallelic variant for ${vcf_basename}"
+	publishDir ".", mode: 'copy', overwrite: true
+
+	label 'bcftools'
+
+	tag "Compression monoallelic vcf file ${vcf_mono_basename}.vcf"
 
 	input:
-		set val(vcf_basename),file(vcf_file) from vcf_channel2
+		set val(vcf_mono_basename), file(vcf_mono_file) from mono_vcf_channel
 
 	output:
-		set val("${vcf_basename}_multiallelic_variants_only"), file("${vcf_basename}_multiallelic_variants_only.vcf") into multi_vcf_channel
+		file("${vcf_mono_basename}.vcf.gz") into blabla2_channel
 
 	"""
-		grep -E "././|#" ${vcf_file} > ${vcf_basename}_multiallelic_variants_only.vcf
+		bcftools view \
+		-O z \
+		-o ${vcf_mono_basename}.vcf.gz \
+		--threads 2 \
+		${vcf_mono_file}
+	"""
+}
+
+
+process generateMulti {
+
+	tag "Generate multiallelic variant for ${vcf_multi_basename}.vcf"
+
+	input:
+		set val(vcf_multi_basename),file(vcf_multi_file) from vcf_channel2
+
+	output:
+		set val("${vcf_multi_basename}_multiallelic_variants_only"), file("${vcf_multi_basename}_multiallelic_variants_only.vcf") into multi_vcf_channel
+
+	"""
+		grep -E "././|#" ${vcf_multi_basename}.vcf > ${vcf_multi_basename}_multiallelic_variants_only.vcf
 	"""
 }
 
@@ -110,19 +189,19 @@ process add_header{
 	"""
 }
 
-process compress_vcf{
+process compress_vcf_multi{
 
 	publishDir ".", mode: 'copy', overwrite: true
 
 	label 'bcftools'
 
-	tag "Compression vcf file ${vcf_final_basename}"
+	tag "Compression multiallelic vcf file ${vcf_final_basename}"
 
 	input:
 		set val(vcf_final_basename), file(vcf_final_file) from final_vcf_channel
 
 	output:
-		file("${vcf_final_basename}.gz") into blabla_channel
+		file("${vcf_final_basename}.vcf.gz") into blabla_channel
 
 	"""
 		bcftools view \
